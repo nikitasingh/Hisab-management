@@ -1,0 +1,166 @@
+<center><p id="notice"><%= notice %></p>
+
+  <% @name = [] %>
+  <% @will_get = [] %>
+  <% @will_give = [] %>
+  
+<table >
+  <tr>
+
+  <td><b>Name:</b>
+  <%= @event.name %>
+</td>
+
+<% if(@event.users.count(:name)!=0) %>
+ <td> <b>Total expense:= </b><%= @event.users.sum(:given) %></td>
+<td>  <b>Number of participants:= </b>  <% count= @event.users.count(:name) %><%= count %></td>
+  <% count= @event.users.count(:name) %>
+ <td> <b>Per head:=</b><% perhead=@event.users.sum(:given)/count%> <%= perhead %>
+</td>
+<td><%= link_to 'Edit', edit_event_path(@event) %> </td>
+<td><%= link_to 'Back', events_path %></td>
+<tr>
+</table>
+
+<table id="table_id"> 
+<thead> 
+  <tr>
+    <th>User</th>
+    <th>Given</th>
+  <th>Will give</th>
+    <th>Will get</th>
+    <th></th>
+    <th></th>
+  </tr>
+</thead>
+<tbody>
+
+<% @event.users.each do |user| %>
+<tr>
+    <td> <%= user.name %></td>
+    <td>  <%= user.given %></td>
+    
+     <td><% if perhead>user.given %>
+      <%= perhead-user.given %> 
+      <% else %>
+      0
+      <% end %></td>
+    <td><% if perhead<user.given %>
+      <%= user.given-perhead %> 
+       <% else %>
+      0
+      <% end %></td>
+       <td><%= link_to 'Edit', edit_user_path(user) %></td>
+    <td><%= link_to 'Destroy', user, confirm: 'Are you sure?', method: :delete %></td>
+     <% end %>
+
+  </tr>
+</tbody>
+</table><br />
+<% @event.users.each do |user| %>
+<% @name << user.name %>
+   <% if perhead>user.given %>
+      <% will_give=perhead-user.given %> 
+            <% will_get=0 %> 
+              <% @will_get << will_get %>
+                <% @will_give << will_give %>
+  <% else %>
+      <% will_get=user.given-perhead %> 
+         <% will_give=0 %> 
+           <% @will_get << will_get %>
+             <% @will_give << will_give %>
+      <% end %>
+
+
+  <% if perhead<user.given %>
+ 
+  <% else %>
+    <% @event.users.where('given > ?',(perhead)).each do |user1| %>
+      <% if (user.given != perhead) %>
+       <% user.given=user.given+will_give %>
+<% user1.given=user1.given-user.given %>
+<% end %>
+<% end %>
+     <% end %>
+    
+     <% end %>
+
+<br/>
+<table id="final">
+ <thead>
+  <tr>
+<th>Receiver</th>
+<th>Giver</th>
+<th>Amount</th></tr>
+</thead>
+  <tbody>
+  
+<% for i in 0..count-1 %>
+<tr>
+<% if (@will_get[i]== nil) then %>
+
+  <% next %>
+  <% else %>
+<% for j in 0..count-1%>
+<% if (@will_give[j]== nil) then %>
+
+  <% next %>
+
+  <% elsif(@will_get[i] > @will_give[j]) %>
+  <% then %>
+
+    <% if @will_give[j]==0 %>
+
+    <% else %>
+ <td>    <%= @name[i] %></td> <td><%= @name[j] %></td><td> <%= @will_give[j] %> </td></tr>
+<% end %>
+  <% @will_get[i]=@will_get[i]-@will_give[j] %>
+  <% @will_give[j]=0 %>
+  <% next %>
+  <% elsif(@will_get[i]<@will_give[j]) %>
+<% if @will_get[i]==0 %>
+
+    <% else %>
+ <td> <%= @name[i] %> </td> <td> <%= @name[j] %></td><td> <%= @will_get[i] %><br/></td>
+<% end %>
+  <% @will_give[j]=@will_give[j]-@will_get[i] %>
+  <% p @will_give[j] %>
+     <% @will_get[i]=0 %>
+     <% break %>
+       <% elsif(@will_get[i]==@will_give[j]) %>
+<% if @will_get[i]==0 %>
+
+    <% else %>
+<td> <%= @name[i] %> </td><td> <%= @name[j] %> </td><td> <%= @will_get[i] %><br/></td>
+<% end %>
+  <% @will_give[j]=@will_give[j]-@will_get[i] %>
+  <% p @will_give[j] %>
+     <% @will_get[i]=0 %>
+       <% @will_give[j]=0 %>
+     <% break %>
+  <% elsif(@will_get[i]==0) then %>
+  <% break %>
+  <% end %>
+  <% end %>
+  <% end %>
+  <% end %>
+<% else %>
+
+<%end %>
+</tr>
+</tbody></table>
+
+  <h2>Add a details:</h2>
+<%= form_for([@event, @event.users.build]) do |f| %>
+  <div class="field">
+    <%= f.label :name %>
+    <%= f.text_field :name %>
+  </div>
+  <div class="field">
+    <%= f.label :given %>
+    <%= f.text_field :given %>
+  </div>
+  <div class="actions">
+    <%= f.submit %>
+  </div>
+<% end %>
